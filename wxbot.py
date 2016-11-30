@@ -50,6 +50,7 @@ class SafeSession(requests.Session):
                 json=None):
         for i in range(3):
             try:
+                print 'Try request: ', url
                 return super(SafeSession, self).request(method, url, params, data, headers, cookies, files, auth,
                                                         timeout,
                                                         allow_redirects, proxies, hooks, stream, verify, cert, json)
@@ -1227,7 +1228,7 @@ class WXBot:
         return dic['BaseResponse']['Ret'] == 0
 
     def test_sync_check(self):
-        for host in ['webpush.wx2', 'webpush2.wx2',
+        for host in ['wx2', 'webpush.wx2', 'webpush2.wx2',
                      'webpush.wx', 'webpush2.wx', 'webpush.weixin', 'webpush2.weixin2',
                      ]:
             self.sync_host = host
