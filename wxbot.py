@@ -53,7 +53,7 @@ class SafeSession(requests.Session):
                 json=None):
         for i in range(3):
             try:
-                log.info( 'Try request: ', url)
+                log.info( 'Try request: %s', url)
                 return super(SafeSession, self).request(method, url, params, data, headers, cookies, files, auth,
                                                         timeout,
                                                         allow_redirects, proxies, hooks, stream, verify, cert, json)
