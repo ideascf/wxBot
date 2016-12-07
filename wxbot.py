@@ -44,10 +44,11 @@ def show_image(file_path):
         command = "open -a /Applications/Preview.app %s&" % quote(file_path)
         os.system(command)
     else:
-        webbrowser.open(os.path.join(os.getcwd(),'temp',file_path))
+        webbrowser.open(os.path.join(os.getcwd(), 'temp', file_path))
 
 
 class SafeSession(requests.Session):
+
     def request(self, method, url, params=None, data=None, headers=None, cookies=None, files=None, auth=None,
                 timeout=None, allow_redirects=True, proxies=None, hooks=None, stream=None, verify=None, cert=None,
                 json=None):
@@ -61,7 +62,7 @@ class SafeSession(requests.Session):
                 if isinstance(e, (requests.ConnectionError,)):
                     raise
                 else:
-                    log.warn( e.message, traceback.format_exc())
+                    log.warn(e.message, traceback.format_exc())
                     continue
 
 
@@ -84,8 +85,8 @@ class WXBot:
         self.sync_key = []
         self.sync_host = ''
 
-        #文件缓存目录
-        self.temp_pwd  =  os.path.join(os.getcwd(), 'temp')
+        # 文件缓存目录
+        self.temp_pwd = os.path.join(os.getcwd(), 'temp')
         if os.path.exists(self.temp_pwd) == False:
             os.makedirs(self.temp_pwd)
 
@@ -139,7 +140,7 @@ class WXBot:
         r = self.session.post(url, data='{}')
         r.encoding = 'utf-8'
         if self.DEBUG:
-            with open(os.path.join(self.temp_pwd,'contacts.json'), 'w') as f:
+            with open(os.path.join(self.temp_pwd, 'contacts.json'), 'w') as f:
                 f.write(r.text.encode('utf-8'))
         dic = json.loads(r.text)
         self.member_list = dic['MemberList']
@@ -451,7 +452,7 @@ class WXBot:
             msg_content['type'] = 37
             msg_content['data'] = msg['RecommendInfo']
             if self.DEBUG:
-                log.info('    %s[useradd] %s' % (msg_prefix,msg['RecommendInfo']['NickName']))
+                log.info('    %s[useradd] %s' % (msg_prefix, msg['RecommendInfo']['NickName']))
         elif mtype == 42:
             msg_content['type'] = 5
             info = msg['RecommendInfo']
@@ -604,7 +605,7 @@ class WXBot:
             check_time = time.time()
             try:
                 retcode, selector = self.sync_check()
-                log.info('[DEBUG] sync_check: %s, selector: %s', retcode, selector)
+                log.info('sync_check: %s, selector: %s', retcode, selector)
 
                 if retcode == '1100':  # 从微信客户端上登出
                     log.info(u'账户从微信客户端登出了...')
@@ -642,22 +643,22 @@ class WXBot:
                         log.debug(u'无事件发生')
                         pass
                     else:
-                        log.info('[DEBUG] sync_check: retcode: %s, selector: %s', retcode, selector)
+                        log.info('sync_check: retcode: %s, selector: %s', retcode, selector)
                         r = self.sync()
                         if r is not None:
                             self.handle_msg(r)
                 else:
-                    log.info('[DEBUG] sync_check: retcode: %s, selector: %s', retcode, selector)
+                    log.info('sync_check: retcode: %s, selector: %s', retcode, selector)
             except:
-                log.info('[ERROR] Except in proc_msg')
-                log.info(format_exc())
+                log.error('Except in proc_msg')
+                log.error(format_exc())
 
             check_time = time.time() - check_time
             if check_time < 0.8:
                 time.sleep(1 - check_time)
 
     def msg_thread_proc(self):
-        log.info('[INFO] Msg thread start')
+        log.info('Msg thread start')
         while True:
             if not self.msg_queue.empty():
                 msg = self.msg_queue.get()
@@ -666,7 +667,7 @@ class WXBot:
                 time.sleep(0.1)
 
     def schedule_thread_proc(self):
-        log.info('[INFO] Schedule thread start')
+        log.info('Schedule thread start')
         while True:
             check_time = time.time()
             self.schedule()
@@ -680,22 +681,22 @@ class WXBot:
     def login_and_init_with_qr(self):
         self.get_uuid()
         self.gen_qr_code(os.path.join(self.temp_pwd, 'wxqr.png'))
-        log.info('[INFO] Please use WeChat to scan the QR code .')
+        log.info('Please use WeChat to scan the QR code .')
 
         result = self.wait4login()
         if result != SUCCESS:
-            log.info('[ERROR] Web WeChat login failed. failed code=%s' % (result,))
+            log.error('Web WeChat login failed. failed code=%s' % (result,))
             return False
 
         if self.login():
-            log.info('[INFO] Web WeChat login succeed .')
+            log.info('Web WeChat login succeed .')
         else:
-            log.info('[ERROR] Web WeChat login failed .')
+            log.error('Web WeChat login failed .')
             return False
         if self.init():
-            log.info('[INFO] Web WeChat init succeed .')
+            log.info('Web WeChat init succeed .')
         else:
-            log.info('[INFO] Web WeChat init failed')
+            log.info('Web WeChat init failed')
             return False
         self.status_notify()
         self.get_contact()
@@ -704,18 +705,18 @@ class WXBot:
         return True
 
     def run_inner(self):
-        log.info('[INFO] Get %d contacts' % len(self.contact_list))
-        log.info('[INFO] Start to process messages .')
+        log.info('Get %d contacts' % len(self.contact_list))
+        log.info('Start to process messages .')
         self.proc_msg()
 
     def run(self):
         if not self.login_and_init_with_restore():
-            log.info('[INFO] Restore login failed !')
+            log.info('Restore login failed !')
             if not self.login_and_init_with_qr():
-                log.info('[ERROR] Login and init failed !')
+                log.error('Login and init failed !')
                 return
         else:
-            log.info('[INFO Restore login succeed .')
+            log.info('Restore login succeed .')
 
         self.msg_thread = threading.Thread(target=self.msg_thread_proc)
         self.msg_thread.setDaemon(True)
@@ -737,11 +738,11 @@ class WXBot:
                 self.inner_proc_thread.start()
                 self.inner_proc_thread.join()
             else:
-                log.info('[ERROR] Try to restore from file failed !')
+                log.error('Try to restore from file failed !')
                 return
 
-    def apply_useradd_requests(self,RecommendInfo):
-        url = self.base_uri + '/webwxverifyuser?r='+str(int(time.time()))+'&lang=zh_CN'
+    def apply_useradd_requests(self, RecommendInfo):
+        url = self.base_uri + '/webwxverifyuser?r=' + str(int(time.time())) + '&lang=zh_CN'
         params = {
             "BaseRequest": self.base_request,
             "Opcode": 3,
@@ -749,7 +750,7 @@ class WXBot:
             "VerifyUserList": [
                 {
                     "Value": RecommendInfo['UserName'],
-                    "VerifyUserTicket": RecommendInfo['Ticket']             }
+                    "VerifyUserTicket": RecommendInfo['Ticket']}
             ],
             "VerifyContent": "",
             "SceneListCount": 1,
@@ -775,8 +776,8 @@ class WXBot:
         """
         if self.is_contact(uid):
             return True
-        url = self.base_uri + '/webwxverifyuser?r='+str(int(time.time()))+'&lang=zh_CN'
-        params ={
+        url = self.base_uri + '/webwxverifyuser?r=' + str(int(time.time())) + '&lang=zh_CN'
+        params = {
             "BaseRequest": self.base_request,
             "Opcode": 2,
             "VerifyUserListSize": 1,
@@ -802,24 +803,24 @@ class WXBot:
         dic = r.json()
         return dic['BaseResponse']['Ret'] == 0
 
-    def add_friend_to_group(self,uid,group_name):
+    def add_friend_to_group(self, uid, group_name):
         """
         将好友加入到群聊中
         """
         gid = ''
-        #通过群名获取群id,群没保存到通讯录中的话无法添加哦
+        # 通过群名获取群id,群没保存到通讯录中的话无法添加哦
         for group in self.group_list:
             if group['NickName'] == group_name:
                 gid = group['UserName']
         if gid == '':
             return False
-        #通过群id判断uid是否在群中
+        # 通过群id判断uid是否在群中
         for user in self.group_members[gid]:
             if user['UserName'] == uid:
-                #已经在群里面了,不用加了
+                # 已经在群里面了,不用加了
                 return True
         url = self.base_uri + '/webwxupdatechatroom?fun=addmember&pass_ticket=%s' % self.pass_ticket
-        params ={
+        params = {
             "AddMemberList": uid,
             "ChatRoomName": gid,
             "BaseRequest": self.base_request
@@ -833,7 +834,7 @@ class WXBot:
         dic = r.json()
         return dic['BaseResponse']['Ret'] == 0
 
-    def delete_user_from_group(self,uname,gid):
+    def delete_user_from_group(self, uname, gid):
         """
         将群用户从群中剔除，只有群管理员有权限
         """
@@ -844,7 +845,7 @@ class WXBot:
         if uid == "":
             return False
         url = self.base_uri + '/webwxupdatechatroom?fun=delmember&pass_ticket=%s' % self.pass_ticket
-        params ={
+        params = {
             "DelMemberList": uid,
             "ChatRoomName": gid,
             "BaseRequest": self.base_request
@@ -884,31 +885,31 @@ class WXBot:
 
     def upload_media(self, fpath, is_img=False):
         if not os.path.exists(fpath):
-            log.info('[ERROR] File not exists.')
+            log.error('File not exists.')
             return None
         url_1 = 'https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
         url_2 = 'https://file2.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
         flen = str(os.path.getsize(fpath))
         ftype = mimetypes.guess_type(fpath)[0] or 'application/octet-stream'
         files = {
-                'id': (None, 'WU_FILE_%s' % str(self.file_index)),
-                'name': (None, os.path.basename(fpath)),
-                'type': (None, ftype),
-                'lastModifiedDate': (None, time.strftime('%m/%d/%Y, %H:%M:%S GMT+0800 (CST)')),
-                'size': (None, flen),
-                'mediatype': (None, 'pic' if is_img else 'doc'),
-                'uploadmediarequest': (None, json.dumps({
-                    'BaseRequest': self.base_request,
-                    'ClientMediaId': int(time.time()),
-                    'TotalLen': flen,
-                    'StartPos': 0,
-                    'DataLen': flen,
-                    'MediaType': 4,
-                    })),
-                'webwx_data_ticket': (None, self.session.cookies['webwx_data_ticket']),
-                'pass_ticket': (None, self.pass_ticket),
-                'filename': (os.path.basename(fpath), open(fpath, 'rb'),ftype.split('/')[1]),
-                }
+            'id': (None, 'WU_FILE_%s' % str(self.file_index)),
+            'name': (None, os.path.basename(fpath)),
+            'type': (None, ftype),
+            'lastModifiedDate': (None, time.strftime('%m/%d/%Y, %H:%M:%S GMT+0800 (CST)')),
+            'size': (None, flen),
+            'mediatype': (None, 'pic' if is_img else 'doc'),
+            'uploadmediarequest': (None, json.dumps({
+                'BaseRequest': self.base_request,
+                'ClientMediaId': int(time.time()),
+                'TotalLen': flen,
+                'StartPos': 0,
+                'DataLen': flen,
+                'MediaType': 4,
+                })),
+            'webwx_data_ticket': (None, self.session.cookies['webwx_data_ticket']),
+            'pass_ticket': (None, self.pass_ticket),
+            'filename': (os.path.basename(fpath), open(fpath, 'rb'), ftype.split('/')[1]),
+            }
         self.file_index += 1
         try:
             r = self.session.post(url_1, files=files)
@@ -916,11 +917,11 @@ class WXBot:
                 # 当file返回值不为0时则为上传失败，尝试第二服务器上传
                 r = self.session.post(url_2, files=files)
             if json.loads(r.text)['BaseResponse']['Ret'] != 0:
-                log.info('[ERROR] Upload media failure.')
+                log.error('upload media failure.')
                 return None
             mid = json.loads(r.text)['MediaId']
             return mid
-        except Exception,e:
+        except Exception, e:
             return None
 
     def send_file_msg_by_uid(self, fpath, uid):
@@ -930,14 +931,14 @@ class WXBot:
         url = self.base_uri + '/webwxsendappmsg?fun=async&f=json&pass_ticket=' + self.pass_ticket
         msg_id = str(int(time.time() * 1000)) + str(random.random())[:5].replace('.', '')
         data = {
-                'BaseRequest': self.base_request,
-                'Msg': {
-                    'Type': 6,
-                    'Content': ("<appmsg appid='wxeb7ec651dd0aefa9' sdkver=''><title>%s</title><des></des><action></action><type>6</type><content></content><url></url><lowurl></lowurl><appattach><totallen>%s</totallen><attachid>%s</attachid><fileext>%s</fileext></appattach><extinfo></extinfo></appmsg>" % (os.path.basename(fpath).encode('utf-8'), str(os.path.getsize(fpath)), mid, fpath.split('.')[-1])).encode('utf8'),
-                    'FromUserName': self.my_account['UserName'],
-                    'ToUserName': uid,
-                    'LocalID': msg_id,
-                    'ClientMsgId': msg_id, }, }
+            'BaseRequest': self.base_request,
+            'Msg': {
+                'Type': 6,
+                'Content': ("<appmsg appid='wxeb7ec651dd0aefa9' sdkver=''><title>%s</title><des></des><action></action><type>6</type><content></content><url></url><lowurl></lowurl><appattach><totallen>%s</totallen><attachid>%s</attachid><fileext>%s</fileext></appattach><extinfo></extinfo></appmsg>" % (os.path.basename(fpath).encode('utf-8'), str(os.path.getsize(fpath)), mid, fpath.split('.')[-1])).encode('utf8'),
+                'FromUserName': self.my_account['UserName'],
+                'ToUserName': uid,
+                'LocalID': msg_id,
+                'ClientMsgId': msg_id, }, }
         try:
             r = self.session.post(url, data=json.dumps(data))
             res = json.loads(r.text)
@@ -945,7 +946,7 @@ class WXBot:
                 return True
             else:
                 return False
-        except Exception,e:
+        except Exception, e:
             return False
 
     def send_img_msg_by_uid(self, fpath, uid):
@@ -954,14 +955,14 @@ class WXBot:
             return False
         url = self.base_uri + '/webwxsendmsgimg?fun=async&f=json'
         data = {
-                'BaseRequest': self.base_request,
-                'Msg': {
-                    'Type': 3,
-                    'MediaId': mid,
-                    'FromUserName': self.my_account['UserName'],
-                    'ToUserName': uid,
-                    'LocalID': str(time.time() * 1e7),
-                    'ClientMsgId': str(time.time() * 1e7), }, }
+            'BaseRequest': self.base_request,
+            'Msg': {
+                'Type': 3,
+                'MediaId': mid,
+                'FromUserName': self.my_account['UserName'],
+                'ToUserName': uid,
+                'LocalID': str(time.time() * 1e7),
+                'ClientMsgId': str(time.time() * 1e7), }, }
         if fpath[-4:] == '.gif':
             url = self.base_uri + '/webwxsendemoticon?fun=sys'
             data['Msg']['Type'] = 47
@@ -973,7 +974,7 @@ class WXBot:
                 return True
             else:
                 return False
-        except Exception,e:
+        except Exception, e:
             return False
 
     def get_user_id(self, name):
@@ -1020,7 +1021,7 @@ class WXBot:
                     return False
         else:
             if self.DEBUG:
-                log.info('[ERROR] This user does not exist .')
+                log.error('This user does not exist .')
             return True
 
     @staticmethod
@@ -1095,7 +1096,7 @@ class WXBot:
             url = LOGIN_TEMPLATE % (tip, self.uuid, int(time.time()))
             code, data = self.do_request(url)
             if code == SCANED:
-                log.info('[INFO] Please confirm to login .')
+                log.info('Please confirm to login .')
                 tip = 0
             elif code == SUCCESS:  # 确认登录成功
                 param = re.search(r'window.redirect_uri="(\S+?)";', data)
@@ -1104,14 +1105,14 @@ class WXBot:
                 self.base_uri = redirect_uri[:redirect_uri.rfind('/')]
                 return code
             elif code == TIMEOUT:
-                log.info('[ERROR] WeChat login timeout. retry in %s secs later...' % (try_later_secs,))
+                log.error('WeChat login timeout. retry in %s secs later...' % (try_later_secs,))
 
                 tip = 1  # 重置
                 retry_time -= 1
                 time.sleep(try_later_secs)
             else:
-                log.info(('[ERROR] WeChat login exception return_code=%s. retry in %s secs later...' %
-                       (code, try_later_secs)))
+                log.error(('WeChat login exception return_code=%s. retry in %s secs later...' %
+                           (code, try_later_secs)))
                 tip = 1
                 retry_time -= 1
                 time.sleep(try_later_secs)
@@ -1185,7 +1186,7 @@ class WXBot:
 
     def login(self):
         if len(self.redirect_uri) < 4:
-            log.warn('[ERROR] Login failed due to network problem, please try again.')
+            log.error('Login failed due to network problem, please try again.')
             return False
         r = self.session.get(self.redirect_uri)
         r.encoding = 'utf-8'
@@ -1314,11 +1315,11 @@ class WXBot:
             url = self.base_uri + '/webwxgeticon?username=%s&skey=%s' % (uid, self.skey)
         else:
             url = self.base_uri + '/webwxgeticon?username=%s&skey=%s&chatroomid=%s' % (
-            uid, self.skey, self.encry_chat_room_id_list[gid])
+                uid, self.skey, self.encry_chat_room_id_list[gid])
         r = self.session.get(url)
         data = r.content
         fn = 'icon_' + uid + '.jpg'
-        with open(os.path.join(self.temp_pwd,fn), 'wb') as f:
+        with open(os.path.join(self.temp_pwd, fn), 'wb') as f:
             f.write(data)
         return fn
 
@@ -1331,7 +1332,7 @@ class WXBot:
         r = self.session.get(url)
         data = r.content
         fn = 'head_' + uid + '.jpg'
-        with open(os.path.join(self.temp_pwd,fn), 'wb') as f:
+        with open(os.path.join(self.temp_pwd, fn), 'wb') as f:
             f.write(data)
         return fn
 
@@ -1348,7 +1349,7 @@ class WXBot:
         r = self.session.get(url)
         data = r.content
         fn = 'img_' + msgid + '.jpg'
-        with open(os.path.join(self.temp_pwd,fn), 'wb') as f:
+        with open(os.path.join(self.temp_pwd, fn), 'wb') as f:
             f.write(data)
         return fn
 
@@ -1365,7 +1366,7 @@ class WXBot:
         r = self.session.get(url)
         data = r.content
         fn = 'voice_' + msgid + '.mp3'
-        with open(os.path.join(self.temp_pwd,fn), 'wb') as f:
+        with open(os.path.join(self.temp_pwd, fn), 'wb') as f:
             f.write(data)
         return fn
 
