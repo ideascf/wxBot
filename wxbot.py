@@ -630,12 +630,12 @@ class WXBot:
                     elif selector == '0':  # 无事件
                         pass
                     else:
-                        log.info('[DEBUG] sync_check:', retcode, selector)
+                        log.info('[DEBUG] sync_check: retcode: %s, selector: %s'', retcode, selector)
                         r = self.sync()
                         if r is not None:
                             self.handle_msg(r)
                 else:
-                    log.info('[DEBUG] sync_check:', retcode, selector)
+                    log.info('[DEBUG] sync_check: retcode: %s, selector: %s', retcode, selector)
             except:
                 log.info('[ERROR] Except in proc_msg')
                 log.info(format_exc())
