@@ -53,13 +53,16 @@ class SafeSession(requests.Session):
                 json=None):
         for i in range(3):
             try:
-                log.info( 'Try request: %s', url)
+                log.debug('Try request: %s %s', method, url)
                 return super(SafeSession, self).request(method, url, params, data, headers, cookies, files, auth,
                                                         timeout,
                                                         allow_redirects, proxies, hooks, stream, verify, cert, json)
-            except Exception as e:
-                log.warn( e.message, traceback.format_exc())
-                continue
+            except requests.RequestException as e:
+                if isinstance(e, (requests.ConnectionError,)):
+                    raise
+                else:
+                    log.warn( e.message, traceback.format_exc())
+                    continue
 
 
 class WXBot:
@@ -600,34 +603,43 @@ class WXBot:
         while True:
             check_time = time.time()
             try:
-                [retcode, selector] = self.sync_check()
-                # log.info('[DEBUG] sync_check:', retcode, selector)
+                retcode, selector = self.sync_check()
+                log.info('[DEBUG] sync_check: %s, selector: %s', retcode, selector)
+
                 if retcode == '1100':  # 从微信客户端上登出
+                    log.info(u'账户从微信客户端登出了...')
                     break
                 elif retcode == '1101':  # 从其它设备上登了网页微信
+                    log.error(u'其它设备登入了网页微信, 终止进程')
                     break
                 elif retcode == '0':
                     if selector == '2':  # 有新消息
+                        log.debug(u'有新消息')
                         r = self.sync()
                         if r is not None:
                             self.handle_msg(r)
                     elif selector == '3':  # 未知
+                        log.debug(u'未知类型')
                         r = self.sync()
                         if r is not None:
                             self.handle_msg(r)
                     elif selector == '4':  # 通讯录更新
+                        log.debug(u'通讯录更新')
                         r = self.sync()
                         if r is not None:
                             self.get_contact()
                     elif selector == '6':  # 可能是红包
+                        log.debug(u'可能是红包消息')
                         r = self.sync()
                         if r is not None:
                             self.handle_msg(r)
                     elif selector == '7':  # 在手机上操作了微信
+                        log.debug(u'在手机上操作了微信')
                         r = self.sync()
                         if r is not None:
                             self.handle_msg(r)
                     elif selector == '0':  # 无事件
+                        log.debug(u'无事件发生')
                         pass
                     else:
                         log.info('[DEBUG] sync_check: retcode: %s, selector: %s', retcode, selector)
@@ -639,6 +651,7 @@ class WXBot:
             except:
                 log.info('[ERROR] Except in proc_msg')
                 log.info(format_exc())
+
             check_time = time.time() - check_time
             if check_time < 0.8:
                 time.sleep(1 - check_time)
@@ -1236,12 +1249,16 @@ class WXBot:
                      ]:
             self.sync_host = host
             log.info(self.sync_host)
+
             retcode = self.sync_check()[0]
             if retcode == '0':
                 return True
+
         return False
 
     def sync_check(self):
+        log.info('<<< sync_check >>>')
+
         params = {
             'r': int(time.time()),
             'sid': self.sid,
@@ -1252,6 +1269,7 @@ class WXBot:
             '_': int(time.time()),
         }
         url = 'https://' + self.sync_host + '.qq.com/cgi-bin/mmwebwx-bin/synccheck?' + urllib.urlencode(params)
+
         try:
             r = self.session.get(url, timeout=60)
             r.encoding = 'utf-8'
@@ -1259,11 +1277,14 @@ class WXBot:
             pm = re.search(r'window.synccheck=\{retcode:"(\d+)",selector:"(\d+)"\}', data)
             retcode = pm.group(1)
             selector = pm.group(2)
+
             return [retcode, selector]
         except:
             return [-1, -1]
 
     def sync(self):
+        log.info('<<< sync >>>')
+
         url = self.base_uri + '/webwxsync?sid=%s&skey=%s&lang=en_US&pass_ticket=%s' \
                               % (self.sid, self.skey, self.pass_ticket)
         params = {
