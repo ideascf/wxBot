@@ -1262,11 +1262,9 @@ class WXBot:
              'webpush.wx', 'webpush2.wx', 'webpush.weixin', 'webpush2.weixin2',
         ]
 
-
-        ev = threading.Event()
         q = Queue()
         thread_list = [
-            threading.Thread(target=self._test_sync_check_thread, args=(host, ev, q))
+            threading.Thread(target=self._test_sync_check_thread, args=(host, q))
             for host in host_list
         ]
         map(
