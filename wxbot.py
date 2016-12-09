@@ -615,7 +615,9 @@ class WXBot:
                     break
                 elif retcode == '1102':  #
                     log.error(u'该domain出现问题,尝试搜索合法的domain')
-                    self.test_sync_check()
+                    if not self.test_sync_check():
+                        log.error(u'找不到合法的domain, 或许登录会话已经过期')
+                        self.login_and_init_with_qr()
                 elif retcode == '-1':
                     log.error('回话可能已经过期,请重新扫码登录')
                     self.login_and_init_with_qr()
