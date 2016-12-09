@@ -16,7 +16,7 @@ import re
 import random
 from traceback import format_exc
 from requests.exceptions import ConnectionError, ReadTimeout
-from Queue import Queue
+from Queue import Queue, Empty
 import HTMLParser
 import threading
 import pickle
@@ -613,6 +613,12 @@ class WXBot:
                 elif retcode == '1101':  # 从其它设备上登了网页微信
                     log.error(u'其它设备登入了网页微信, 终止进程')
                     break
+                elif retcode == '1102':  #
+                    log.error(u'该domain出现问题,尝试搜索合法的domain')
+                    self.test_sync_check()
+                elif retcode == '-1':
+                    log.error('回话可能已经过期,请重新扫码登录')
+                    self.login_and_init_with_qr()
                 elif retcode == '0':
                     if selector == '2':  # 有新消息
                         log.debug(u'有新消息')
@@ -1244,21 +1250,54 @@ class WXBot:
         dic = json.loads(r.text)
         return dic['BaseResponse']['Ret'] == 0
 
+    def _test_sync_check_thread(self, sync_host, q):
+        retcode = self.sync_check(sync_host)[0]
+        if retcode == '0':
+            q.push(sync_host)
+
+            return True
+
     def test_sync_check(self):
-        for host in ['wx2', 'webpush.wx2', 'webpush2.wx2',
-                     'webpush.wx', 'webpush2.wx', 'webpush.weixin', 'webpush2.weixin2',
-                     ]:
-            self.sync_host = host
-            log.info(self.sync_host)
+        host_list = ['wx2', 'webpush.wx2', 'webpush2.wx2',
+             'webpush.wx', 'webpush2.wx', 'webpush.weixin', 'webpush2.weixin2',
+        ]
 
-            retcode = self.sync_check()[0]
-            if retcode == '0':
-                return True
 
-        return False
+        ev = threading.Event()
+        q = Queue()
+        thread_list = [
+            threading.Thread(target=self._test_sync_check_thread, args=(host, ev, q))
+            for host in host_list
+        ]
+        map(
+            lambda t: t.start(),
+            thread_list
+        )
 
-    def sync_check(self):
+        try:
+            sync_host = q.get(timeout=61)
+            log.info(u'得到的合法sync_host: %s', sync_host)
+            self.sync_host = sync_host
+        except Empty:
+            return False
+        else:
+            return True
+
+        # for host in host_list:
+        #     self.sync_host = host
+        #     log.info(self.sync_host)
+        #
+        #     retcode = self.sync_check()[0]
+        #     if retcode == '0':
+        #         return True
+
+        # return False
+
+    def sync_check(self, sync_host=None):
         log.info('<<< sync_check >>>')
+
+        if sync_host is None:
+            sync_host = self.sync_host
 
         params = {
             'r': int(time.time()),
@@ -1269,7 +1308,7 @@ class WXBot:
             'synckey': self.sync_key_str,
             '_': int(time.time()),
         }
-        url = 'https://' + self.sync_host + '.qq.com/cgi-bin/mmwebwx-bin/synccheck?' + urllib.urlencode(params)
+        url = 'https://' + sync_host + '.qq.com/cgi-bin/mmwebwx-bin/synccheck?' + urllib.urlencode(params)
 
         try:
             r = self.session.get(url, timeout=60)
