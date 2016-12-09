@@ -1257,7 +1257,7 @@ class WXBot:
 
         retcode = self.sync_check(sync_host)[0]
         if retcode == '0':
-            q.push(sync_host)
+            q.put(sync_host)
 
             return True
 
