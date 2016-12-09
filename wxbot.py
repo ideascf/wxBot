@@ -1251,6 +1251,8 @@ class WXBot:
         return dic['BaseResponse']['Ret'] == 0
 
     def _test_sync_check_thread(self, sync_host, q):
+        log.debug('Try to test sync_host: %s', sync_host)
+
         retcode = self.sync_check(sync_host)[0]
         if retcode == '0':
             q.push(sync_host)
@@ -1258,6 +1260,8 @@ class WXBot:
             return True
 
     def test_sync_check(self):
+        log.info('<<< test_sync_check >>>')
+
         host_list = ['wx2', 'webpush.wx2', 'webpush2.wx2',
              'webpush.wx', 'webpush2.wx', 'webpush.weixin', 'webpush2.weixin2',
         ]
@@ -1273,7 +1277,7 @@ class WXBot:
         )
 
         try:
-            sync_host = q.get(timeout=61)
+            sync_host = q.get(timeout=10)
             log.info(u'得到的合法sync_host: %s', sync_host)
             self.sync_host = sync_host
         except Empty:
