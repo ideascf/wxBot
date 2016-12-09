@@ -1279,7 +1279,7 @@ class WXBot:
         )
 
         try:
-            sync_host = q.get(timeout=10)
+            sync_host = q.get(timeout=60)
             log.info(u'得到的合法sync_host: %s', sync_host)
             self.sync_host = sync_host
         except Empty:
